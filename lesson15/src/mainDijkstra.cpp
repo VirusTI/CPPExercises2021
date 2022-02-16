@@ -12,7 +12,7 @@ int debugPoint(int line) {
 }
 
 #define rassert(condition, message) if (!(condition)) { std::stringstream ss; (ss << "Assertion \"" << message << "\" failed at line " << debugPoint(__LINE__) << "!"); throw std::runtime_error(ss.str()); }
-
+#define int long long
 
 struct Edge {
     int u, v; // номера вершин которые это ребро соединяет
@@ -58,24 +58,53 @@ void run() {
     const int INF = std::numeric_limits<int>::max();
 
     std::vector<int> distances(nvertices, INF);
-    // TODO ...
+    distances[start] = 0;
 
-//    while (true) {
-//
-//    }
+    std::vector<bool> is_processed(nvertices, 0);
+    is_processed[start] = 1;
+    int last_processed = start;
 
-//    if (...) {
-//        ...
-//        for (...) {
-//            std::cout << (path[i] + 1) << " ";
-//        }
-//        std::cout << std::endl;
-//    } else {
-//        std::cout << -1 << std::endl;
-//    }
+    std:std::vector<int> from(nvertices,0);
+    from[start]=-1;
+    while(true){
+        bool is_new = 0;
+        for(auto E: edges_by_vertex[last_processed])
+            if(!is_processed[E.v]){
+                distances[E.v]=std::min(distances[E.v],distances[E.u]+E.w);
+                is_new = 1;
+                from[E.v] = E.u;
+            }
+        if(!is_new)
+            break;
+        int min_vert = finish;
+        for(int v = 0;v<nvertices;v++)
+            if(!is_processed[v])
+                if(distances[min_vert]>distances[v])
+                {
+                    min_vert = v;
+                }
+        is_processed[min_vert] = 1;
+        last_processed = min_vert;
+    }
+    if (distances[finish]!=INF) {
+        std::vector<int> pass;
+        pass.reserve(nvertices);
+        int ptr = finish;
+        while(ptr!=-1){
+            pass.push_back(ptr);
+            ptr = from[ptr];
+        }
+        std::reverse(pass.begin(), pass.end());
+        for (auto v:pass) {
+            std::cout << (v + 1) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << -1 << std::endl;
+    }
 }
 
-int main() {
+signed main() {
     try {
         run();
 
