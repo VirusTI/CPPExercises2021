@@ -2,26 +2,32 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
-
+#include <set>
+#define x first
+#define y second
+#define int long long
 int debugPoint(int line) {
     if (line < 0)
         return 0;
 
-    // You can put breakpoint at the following line to catch any rassert failure:
     return line;
 }
 
 #define rassert(condition, message) if (!(condition)) { std::stringstream ss; (ss << "Assertion \"" << message << "\" failed at line " << debugPoint(__LINE__) << "!"); throw std::runtime_error(ss.str()); }
-#define int long long
+
 
 struct Edge {
-    int u, v; // номера вершин которые это ребро соединяет
+    signed u, v; // номера вершин которые это ребро соединяет
     int w; // длина ребра (т.е. насколько длинный путь предстоит преодолеть переходя по этому ребру между вершинами)
 
-    Edge(int u, int v, int w) : u(u), v(v), w(w)
+    Edge(signed u, signed v, int w) : u(u), v(v), w(w)
     {}
 };
 
+signed * prev;
+int * q;
+
+std::vector<Edge>* e;
 void run() {
     // https://codeforces.com/problemset/problem/20/C?locale=ru
     // Не требуется сделать оптимально быструю версию, поэтому если вы получили:
@@ -30,73 +36,70 @@ void run() {
     //
     // То все замечательно и вы молодец.
 
-    int nvertices, medges;
-    std::cin >> nvertices;
-    std::cin >> medges;
+    int n, m;
+    std::cin >> n;
+    std::cin >> m;
 
-    std::vector<std::vector<Edge>> edges_by_vertex(nvertices);
-    for (int i = 0; i < medges; ++i) {
+    e = new std::vector<Edge>[n];
+    for (int i = 0; i < m; ++i) {
         int ai, bi, w;
         std::cin >> ai >> bi >> w;
-        rassert(ai >= 1 && ai <= nvertices, 23472894792020);
-        rassert(bi >= 1 && bi <= nvertices, 23472894792021);
+        rassert(ai >= 1 && ai <= n, 23472894792020);
+        rassert(bi >= 1 && bi <= n, 23472894792021);
 
         ai -= 1;
         bi -= 1;
-        rassert(ai >= 0 && ai < nvertices, 3472897424024);
-        rassert(bi >= 0 && bi < nvertices, 3472897424025);
+        rassert(ai >= 0 && ai < n, 3472897424024);
+        rassert(bi >= 0 && bi < n, 3472897424025);
 
-        Edge edgeAB(ai, bi, w);
-        edges_by_vertex[ai].push_back(edgeAB);
+        e[ai].push_back(Edge(ai, bi, w));
 
-        edges_by_vertex[bi].push_back(Edge(bi, ai, w)); // а тут - обратное ребро, можно конструировать объект прямо в той же строчке где он и потребовался
+        e[bi].push_back(Edge(bi, ai, w));
     }
 
-    const int start = 0;
-    const int finish = nvertices - 1;
+    const int s = 0;
+    const int t = n - 1;
 
-    const int INF = std::numeric_limits<int>::max();
+    int* q = new int[n];
+    int * prev = new int[n];
 
-    std::vector<int> distances(nvertices, INF);
-    distances[start] = 0;
-
-    std::vector<bool> is_processed(nvertices, 0);
-    is_processed[start] = 1;
-    int last_processed = start;
-
-    std:std::vector<int> from(nvertices,0);
-    from[start]=-1;
-    while(true){
-        bool is_new = 0;
-        for(auto E: edges_by_vertex[last_processed])
-            if(!is_processed[E.v]){
-                distances[E.v]=std::min(distances[E.v],distances[E.u]+E.w);
-                is_new = 1;
-                from[E.v] = E.u;
-            }
-        if(!is_new)
-            break;
-        int min_vert = finish;
-        for(int v = 0;v<nvertices;v++)
-            if(!is_processed[v])
-                if(distances[min_vert]>distances[v])
-                {
-                    min_vert = v;
-                }
-        is_processed[min_vert] = 1;
-        last_processed = min_vert;
-    }
-    if (distances[finish]!=INF) {
-        std::vector<int> pass;
-        pass.reserve(nvertices);
-        int ptr = finish;
-        while(ptr!=-1){
-            pass.push_back(ptr);
-            ptr = from[ptr];
+    std::set<std::pair<int, int>> now;
+    q[s] = 0;
+    prev[s] = -1;
+    now.insert({q[s], s});
+    for(int i = 0; i<n; i++){
+        if(i!=s){
+            q[i] = 10000000000000ll;
+            now.insert({q[i], i});
+            prev[i] = -1;
         }
-        std::reverse(pass.begin(), pass.end());
-        for (auto v:pass) {
-            std::cout << (v + 1) << " ";
+    }
+
+    while(!now.empty()){
+        int v = (*now.begin()).y;
+        int len = (*now.begin()).x;
+        now.erase(now.begin());
+        for(auto z:e[v]){
+            if(len+z.w<q[z.v]){
+                now.erase({q[z.v], z.v});
+                q[z.v] = len+z.w;
+                prev[z.v] = v;
+                now.insert({q[z.v], z.v});
+            }
+
+        }
+    }
+
+    if (prev[t]!=-1) {
+        int now = t;
+        std::vector<int> ans;
+        while(now!=-1) {
+            ans.push_back(now+1);
+            now = prev[now];
+        }
+        reverse(ans.begin(), ans.end());
+        for(auto z:ans){
+            std::cout << z << " ";
         }
         std::cout << std::endl;
     } else {
